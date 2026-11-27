@@ -2486,5 +2486,64 @@ showHome = makeHomeV2({
     fallback: originalHome
 });
 
+
+// ==========================================
+// STORY HUB V2.1
+// Shared Theme Integration
+// ==========================================
+
+import { installThemeV2 } from './theme-v2.js';
+
+const sharedTheme = installThemeV2({
+
+    db,
+    state,
+    navigate,
+    isAdmin,
+    logout,
+    report,
+    escape
+
+});
+
+
+// Extend existing rendering
+
+const previousRender = render;
+
+render = function (html) {
+
+    previousRender(html);
+
+    sharedTheme.refresh();
+};
+
+
+// Extend private artwork loading
+
+const previousLoadArt = loadArt;
+
+loadArt = async function () {
+
+    await previousLoadArt();
+
+    await sharedTheme.loadArt();
+};
+
+
+// Use the real book cover across all pages
+
+const previousBookCover = bookCover;
+
+bookCover = function (work) {
+
+    return sharedTheme.cover(work)
+        || previousBookCover(work);
+};
+
+
+// Start the website
+
 start();
+
 
