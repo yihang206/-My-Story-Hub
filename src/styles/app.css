@@ -1,4 +1,38 @@
 @import "./canvas.css";
+/* Extend only the side gutters using the session's already-decoded private art.
+   The original canvas and every element inside it keep their accepted geometry. */
+@media (min-width: 901px) {
+  #shell:not([data-view="reader"])::before,
+  #shell:not([data-view="reader"])::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: max(0px, calc((100vw - 100cqw) / 2));
+    z-index: -2;
+    pointer-events: none;
+    background-image: linear-gradient(#faeee640, #f5deee50), var(--art);
+    background-repeat: no-repeat;
+    background-size: auto 100dvh;
+    filter: blur(30px) saturate(0.72);
+    clip-path: inset(0);
+    opacity: 0.85;
+  }
+  #shell:not([data-view="reader"])::before {
+    left: 0;
+    background-position: left center;
+  }
+  #shell:not([data-view="reader"])::after {
+    right: 0;
+    background-position: right center;
+  }
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  #shell::before,
+  #shell::after {
+    display: none;
+  }
+}
 :root {
   --serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif;
   --sans: "Microsoft YaHei", system-ui, sans-serif;
