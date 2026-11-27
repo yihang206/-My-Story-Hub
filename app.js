@@ -2461,4 +2461,30 @@ async function start() {
     }
 }
 
+
+// Story Hub - Home V2 Integration
+
+import { makeHomeV2 } from './home-v2.js';
+
+const originalHome = showHome;
+
+showHome = makeHomeV2({
+    db,
+    state,
+    escape,
+    check,
+    render,
+    loadWorks,
+    isAdmin,
+    navigate,
+    showWork,
+    openReader,
+    createWork,
+    logout,
+    report,
+    toast,
+    fallback: originalHome
+});
+
 start();
+
