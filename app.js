@@ -2462,6 +2462,7 @@ async function start() {
 }
 
 
+
 // Story Hub - Home V2 Integration
 
 import { makeHomeV2 } from './home-v2.js';
@@ -2487,88 +2488,46 @@ showHome = makeHomeV2({
 });
 
 
-// ==========================================
-// STORY HUB V2.1
-// Shared Theme Integration
-// ==========================================
+// Story Hub - Library V2 Integration
 
-import { installThemeV2 } from './theme-v2.js';
+const originalLibrary = showLibrary;
 
-const sharedTheme = installThemeV2({
+let libraryV2 = null;
 
-    db,
-    state,
-    navigate,
-    isAdmin,
-    logout,
-    report,
-    escape
+showLibrary = async function () {
+    try {
+        if (!libraryV2) {
+            const module = await import(
+                './library-v2.js?v=2'
+            );
 
-});
+            libraryV2 = module.makeLibraryV2({
+                db,
+                state,
+                escape,
+                check,
+                render,
+                loadWorks,
+                isAdmin,
+                navigate,
+                showWork: id => showWork(id),
+                createWork,
+                logout,
+                report
+            });
+        }
 
+        await libraryV2();
 
-// Extend existing rendering
+    } catch (error) {
+        console.error(error);
 
-const previousRender = render;
+        if (state.user && state.view === 'library') {
+            toast('新版书架加载失败，暂时使用旧版');
 
-render = function (html) {
-
-    previousRender(html);
-
-    sharedTheme.refresh();
+            await originalLibrary();
+        }
+    }
 };
-
-
-// Extend private artwork loading
-
-const previousLoadArt = loadArt;
-
-loadArt = async function () {
-
-    await previousLoadArt();
-
-    await sharedTheme.loadArt();
-};
-
-
-// Use the real book cover across all pages
-
-const previousBookCover = bookCover;
-
-bookCover = function (work) {
-
-    return sharedTheme.cover(work)
-        || previousBookCover(work);
-};
-
-
-// Start the website
-
-
-// ==========================================
-// STORY HUB V2 - Library Integration
-// ==========================================
-
-import { makeLibraryV2 } from './library-v2.js?v=1';
-
-showLibrary = makeLibraryV2({
-
-    db,
-    state,
-    escape,
-    check,
-    render,
-    loadWorks,
-    isAdmin,
-    navigate,
-    showWork: id => showWork(id),
-    createWork,
-    logout,
-    report
-
-});
 
 start();
-
-
-
