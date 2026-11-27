@@ -2544,6 +2544,31 @@ bookCover = function (work) {
 
 // Start the website
 
+
+// ==========================================
+// STORY HUB V2 - Library Integration
+// ==========================================
+
+import { makeLibraryV2 } from './library-v2.js?v=1';
+
+showLibrary = makeLibraryV2({
+
+    db,
+    state,
+    escape,
+    check,
+    render,
+    loadWorks,
+    isAdmin,
+    navigate,
+    showWork: id => showWork(id),
+    createWork,
+    logout,
+    report
+
+});
+
 start();
+
 
 
