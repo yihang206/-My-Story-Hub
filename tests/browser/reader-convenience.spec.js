@@ -130,6 +130,13 @@ test("completed chapter resumes at the next published chapter; inaccessible hist
     "reader/" + next,
   );
   await expect(page.locator(".resume-reading")).toContainText("下一章");
+  f.tables.reading_progress[0].progress_percent = 32;
+  await page.reload();
+  await expect(page.locator(".resume-reading")).toHaveAttribute(
+    "data-route",
+    "reader/" + ids.chapter,
+  );
+  await expect(page.locator(".resume-reading")).toContainText("32%");
   f.tables.reading_progress[0].chapters = null;
   await page.reload();
   await expect(page.locator(".art-book")).toBeVisible();
