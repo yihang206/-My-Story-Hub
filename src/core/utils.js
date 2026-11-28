@@ -20,7 +20,11 @@ export const textMarkup = (s) =>
   String(s ?? "")
     .split(/\n\s*\n|\n/)
     .filter(Boolean)
-    .map((p) => `<p>${escapeHtml(p)}</p>`)
+    .map((p) =>
+      /^(?:-{3,}|—{3,}|─{3,}|\*\s*\*\s*\*)$/.test(p.trim())
+        ? '<hr class="scene-break" aria-label="情节分隔">'
+        : `<p>${escapeHtml(p)}</p>`,
+    )
     .join("");
 export function showToast(message) {
   const el = document.querySelector("#toast");

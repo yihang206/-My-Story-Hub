@@ -4,7 +4,47 @@ import { DraftController } from "../src/core/draft.js";
 import { Latest } from "../src/core/latest.js";
 import { AssetManager } from "../src/core/assets.js";
 import { ReadingTracker } from "../src/core/reading.js";
-import { escapeHtml, normalizePreferences } from "../src/core/utils.js";
+import {
+  escapeHtml,
+  normalizePreferences,
+  textMarkup,
+} from "../src/core/utils.js";
+import { orderedParts, chapterLabel } from "../src/core/story-structure.js";
+import { sectionHeading } from "../src/components/section-heading.js";
+
+test("a work prologue precedes volumes regardless of their numeric order", () => {
+  const parts = [
+    { title: "第一卷", sort_order: 0 },
+    { title: "楔子", entry_type: "prologue", sort_order: 90 },
+  ];
+  assert.deepEqual(
+    orderedParts(parts).map((p) => p.title),
+    ["楔子", "第一卷"],
+  );
+  assert.equal(parts[0].title, "第一卷");
+  assert.equal(
+    chapterLabel({
+      title: "楔子　测试",
+      volumes: { title: "楔子", entry_type: "prologue" },
+    }),
+    "楔子　测试",
+  );
+});
+
+test("scene breaks and optional subtitles retain text safely without duplicate headings", () => {
+  assert.equal(
+    textMarkup("前一场景。\n\n---\n\n后一场景。"),
+    '<p>前一场景。</p><hr class="scene-break" aria-label="情节分隔"><p>后一场景。</p>',
+  );
+  assert.match(textMarkup("<script>\n—— 普通副标题"), /&lt;script&gt;/);
+  assert.match(textMarkup("—— 普通副标题"), /<p>—— 普通副标题<\/p>/);
+  assert.equal(sectionHeading({ title: "楔子" }, "楔子"), "");
+  assert.equal(sectionHeading({ title: null, subtitle: null }, "标题"), "");
+  assert.match(
+    sectionHeading({ title: "风起", subtitle: "—— <script>" }, "第一章"),
+    /&lt;script&gt;/,
+  );
+});
 test("late route results cannot overwrite the latest navigation", () => {
   const gate = new Latest();
   const old = gate.begin();

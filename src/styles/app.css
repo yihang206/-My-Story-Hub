@@ -487,6 +487,48 @@ dialog::backdrop {
 .chapter-row > span {
   white-space: nowrap;
 }
+.prologue-entry {
+  padding: 16px 0;
+  font-size: 20px;
+}
+.section-directory {
+  display: grid;
+  padding: 0 0 12px 20px;
+}
+.section-directory button {
+  text-align: left;
+  border: 0;
+  background: transparent;
+}
+.studio-prologue {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.section-heading {
+  text-align: center;
+  margin: 3em 0 2em;
+}
+.reader-content .section-heading h2,
+.preview-text .section-heading h2 {
+  margin: 0 0 0.6em;
+}
+.section-heading .section-subtitle {
+  text-indent: 0;
+  margin: 0.6em 0 0;
+  color: var(--muted);
+  font-size: 0.8em;
+  line-height: 1.7;
+}
+.scene-break {
+  width: 88%;
+  border: 0;
+  border-top: 1px solid currentColor;
+  opacity: 0.35;
+  margin: 3em auto;
+}
+.preview-chapter-title {
+  text-align: center;
+}
 .record {
   display: flex;
   align-items: center;

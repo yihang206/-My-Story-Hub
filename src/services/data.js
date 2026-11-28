@@ -1,4 +1,5 @@
 import { check } from "../core/utils.js";
+import { orderedParts } from "../core/story-structure.js";
 export function createData(db, session) {
   const admin = () => {
     if (
@@ -36,6 +37,20 @@ export function createData(db, session) {
     volumes: (id) => ordered("volumes", "work_id", id),
     chapters: (id) => ordered("chapters", "volume_id", id),
     sections: (id) => ordered("sections", "chapter_id", id),
+    async sectionHeadings(chapterIds) {
+      if (!chapterIds.length) return [];
+      let query = db
+        .from("sections")
+        .select(
+          "id,chapter_id,title,subtitle,is_published,sort_order,created_at",
+        )
+        .in("chapter_id", chapterIds)
+        .order("sort_order")
+        .order("created_at");
+      if (session.preview || session.profile.role !== "admin")
+        query = query.eq("is_published", true);
+      return check(await query);
+    },
     async one(table, id) {
       let query = db.from(table).select("*").eq("id", id);
       if (session.preview || session.profile.role !== "admin") {
@@ -47,7 +62,7 @@ export function createData(db, session) {
       return check(await query.single());
     },
     async tree(workId) {
-      const volumes = await ordered("volumes", "work_id", workId);
+      const volumes = orderedParts(await ordered("volumes", "work_id", workId));
       return Promise.all(
         volumes.map(async (v) => ({
           ...v,
@@ -75,7 +90,7 @@ export function createData(db, session) {
       }
       let query = db
         .from("chapters")
-        .select("*,volumes(title,works(title))")
+        .select("*,volumes(title,entry_type,works(title))")
         .eq("status", "published")
         .order("published_at", { ascending: false })
         .limit(3);
@@ -87,7 +102,7 @@ export function createData(db, session) {
       let q = db
         .from("reading_progress")
         .select(
-          "*,chapters(id,title,status,volumes(title,work_id,works(title)))",
+          "*,chapters(id,title,status,volumes(title,entry_type,work_id,works(title)))",
         )
         .eq("user_id", session.user.id);
       if (chapterId) q = q.eq("chapter_id", chapterId);

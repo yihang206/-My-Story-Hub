@@ -1,3 +1,5 @@
+import { isPrologue } from "../core/story-structure.js";
+import { sectionHeading } from "../components/section-heading.js";
 import { notesPanel } from "../components/notes.js";
 import {
   escapeHtml as e,
@@ -9,7 +11,7 @@ import {
 import { preferenceFields, bindPreferences } from "./settings.js";
 import { ReadingTracker } from "../core/reading.js";
 import { config } from "../config.js";
-export async function reader(ctx, id) {
+export async function reader(ctx, id, targetSection) {
   const [chapter, sections, progress] = await Promise.all([
     ctx.data.one("chapters", id),
     ctx.data.sections(id),
@@ -17,6 +19,7 @@ export async function reader(ctx, id) {
   ]);
   const volume = await ctx.data.one("volumes", chapter.volume_id);
   if (ctx.session.preview) await ctx.data.one("works", volume.work_id);
+  const partLabel = isPrologue(volume) ? "作品开篇" : volume.title;
   const tree = await ctx.data.tree(volume.work_id);
   const chapters = tree.flatMap((v) =>
     v.chapters.filter((c) => c.status === "published"),
@@ -35,7 +38,7 @@ export async function reader(ctx, id) {
   };
   const notes = await notesPanel(ctx, published);
   return {
-    html: `<div class="reader-page"><header class="reader-toolbar"><button data-route="directory/${uid(volume.work_id)}">返回目录</button><span>${e(volume.title)}</span><button id="toggle-toc" aria-expanded="false">章节目录</button><button id="reading-preferences">阅读设置</button></header><aside id="reader-toc" hidden><h2>章节目录</h2>${chapters.map((c) => `<button data-route="reader/${uid(c.id)}" ${c.id === id ? 'aria-current="page"' : ""}>${e(c.title)}</button>`).join("")}</aside><article class="reader-content"><p class="eyebrow">${e(volume.title)}</p><h1>${e(chapter.title)}</h1>${!config.verifiedRpc ? '<p class="notice">阅读同步尚待后端函数核验，本次位置与时长不会写入服务器。</p>' : ""}${published.map((s) => `<section data-section="${e(s.id)}"><h2>${e(s.title)}</h2>${paragraphs(s.content)}</section>`).join("")}<div class="actions reader-next">${index > 0 ? `<button data-route="reader/${uid(chapters[index - 1].id)}">上一章</button>` : ""}<button data-route="directory/${uid(volume.work_id)}">返回目录</button>${index >= 0 && index < chapters.length - 1 ? `<button data-route="reader/${uid(chapters[index + 1].id)}">下一章</button>` : ""}</div>${notes.html}</article><footer class="reader-bottom"><span id="reader-percent">本章进度 0%</span><progress id="reader-progress" max="100" value="0" aria-label="本章阅读进度"></progress><button id="mark-finished" ${config.verifiedRpc && !ctx.session.preview ? "" : "disabled"}>标记读完</button><span id="sync-status" role="status"></span></footer></div>`,
+    html: `<div class="reader-page"><header class="reader-toolbar"><button data-route="directory/${uid(volume.work_id)}">返回目录</button><span>${e(partLabel)}</span><button id="toggle-toc" aria-expanded="false">章节目录</button><button id="reading-preferences">阅读设置</button></header><aside id="reader-toc" hidden><h2>章节目录</h2>${chapters.map((c) => `<button data-route="reader/${uid(c.id)}" ${c.id === id ? 'aria-current="page"' : ""}>${e(c.title)}</button>`).join("")}</aside><article class="reader-content"><p class="eyebrow">${e(partLabel)}</p><h1>${e(chapter.title)}</h1>${!config.verifiedRpc ? '<p class="notice">阅读同步尚待后端函数核验，本次位置与时长不会写入服务器。</p>' : ""}${published.map((s) => `<section data-section="${e(s.id)}">${sectionHeading(s, chapter.title)}${paragraphs(s.content)}</section>`).join("")}<div class="actions reader-next">${index > 0 ? `<button data-route="reader/${uid(chapters[index - 1].id)}">上一章</button>` : ""}<button data-route="directory/${uid(volume.work_id)}">返回目录</button>${index >= 0 && index < chapters.length - 1 ? `<button data-route="reader/${uid(chapters[index + 1].id)}">下一章</button>` : ""}</div>${notes.html}</article><footer class="reader-bottom"><span id="reader-percent">本章进度 0%</span><progress id="reader-progress" max="100" value="0" aria-label="本章阅读进度"></progress><button id="mark-finished" ${config.verifiedRpc && !ctx.session.preview ? "" : "disabled"}>标记读完</button><span id="sync-status" role="status"></span></footer></div>`,
     mount(el) {
       ctx.applyPreferences();
       notes.mount(el);
@@ -148,7 +151,7 @@ export async function reader(ctx, id) {
       };
       const restore = requestAnimationFrame(() => {
         const section = [...el.querySelectorAll("[data-section]")].find(
-          (s) => s.dataset.section === saved?.section_id,
+          (s) => s.dataset.section === (targetSection || saved?.section_id),
         );
         const nodes = section?.querySelectorAll("[data-paragraph]");
         const index = Number(saved?.paragraph_index);
@@ -165,9 +168,11 @@ export async function reader(ctx, id) {
         );
         window.scrollTo(
           0,
-          target
-            ? target.getBoundingClientRect().top + scrollY - toolbar - 24
-            : (max * (Number(saved?.progress_percent) || 0)) / 100,
+          targetSection && section
+            ? section.getBoundingClientRect().top + scrollY - toolbar - 24
+            : target
+              ? target.getBoundingClientRect().top + scrollY - toolbar - 24
+              : (max * (Number(saved?.progress_percent) || 0)) / 100,
         );
         update();
         restoring = false;

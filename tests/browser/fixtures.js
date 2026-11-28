@@ -129,19 +129,69 @@ export async function fixture(
         const name = url.pathname.split("/").at(-1);
         const payload = req.postDataJSON();
         writes.push({ table: name, payload });
+        if (name === "create_story_prologue") {
+          let opening = volumes.find((v) => v.entry_type === "prologue");
+          if (!opening) {
+            opening = {
+              id: "66666666-6666-4666-8666-666666666666",
+              work_id: payload.target_work,
+              title: "楔子",
+              entry_type: "prologue",
+              sort_order: 0,
+              is_published: false,
+            };
+            volumes.push(opening);
+          }
+          let chapter = chapters.find((c) => c.volume_id === opening.id);
+          if (!chapter) {
+            chapter = {
+              id: "77777777-7777-4777-8777-777777777777",
+              volume_id: opening.id,
+              title: payload.prologue_title,
+              status: "draft",
+              sort_order: 0,
+              volumes: { ...opening, works: works[0] },
+            };
+            chapters.push(chapter);
+          }
+          let section = sections.find((s) => s.chapter_id === chapter.id);
+          if (!section) {
+            section = {
+              id: "88888888-8888-4888-8888-888888888888",
+              chapter_id: chapter.id,
+              title: payload.prologue_title,
+              content: "",
+              is_published: false,
+              section_type: "main",
+              sort_order: 0,
+            };
+            sections.push(section);
+          }
+          return fulfill(section.id);
+        }
         if (name === "publish_story_section") {
           const target = sections.find((s) => s.id === payload.target_section);
           const draft = tables.section_drafts.find(
             (d) => d.section_id === payload.target_section,
           );
-          if (target && draft)
+          if (target && draft) {
+            if (target.is_published)
+              tables.revisions.push({
+                section_id: target.id,
+                title: target.title,
+                subtitle: target.subtitle,
+                content: target.content,
+                created_at: new Date().toISOString(),
+              });
             Object.assign(target, {
               title: draft.title,
+              subtitle: draft.subtitle,
               content: draft.content,
               is_published: true,
               section_type: payload.new_type,
               sort_order: payload.new_order,
             });
+          }
         }
         if (name === "save_story_reading") {
           let row = tables.reading_progress.find(

@@ -1,3 +1,4 @@
+import { chapterLabel } from "../core/story-structure.js";
 import { escapeHtml as e, check, date, duration } from "../core/utils.js";
 export async function insights(ctx) {
   ctx.data.admin();
@@ -10,7 +11,7 @@ export async function insights(ctx) {
       .then(check),
     ctx.db
       .from("reading_progress")
-      .select("*,chapters(title,volumes(title,works(title)))")
+      .select("*,chapters(title,volumes(title,entry_type,works(title)))")
       .order("last_read_at", { ascending: false })
       .then(check),
     ctx.db.from("reading_stats").select("*").then(check),
@@ -37,7 +38,7 @@ export async function insights(ctx) {
               .filter((a) => a.user_id === r.id)
               .map((a) => e(a.works?.title))
               .join("、") || "暂无"
-          }</p><p class="muted">最近阅读：${date(records[0]?.last_read_at)} · ${records.filter((p) => p.is_completed).length} 章已完成</p><div class="table-wrap"><table><thead><tr><th>作品 / 分卷 / 章节</th><th>进度</th><th>有效时长</th></tr></thead><tbody>${records.map((p) => `<tr><td>${e(p.chapters?.volumes?.works?.title)} / ${e(p.chapters?.volumes?.title)} / ${e(p.chapters?.title)}</td><td>${Math.round(p.progress_percent)}% ${p.is_completed ? "已完成" : ""}</td><td>${duration(times.filter((t) => t.chapter_id === p.chapter_id).reduce((s, t) => s + Number(t.active_seconds || 0), 0))}</td></tr>`).join("")}</tbody></table></div></details>`;
+          }</p><p class="muted">最近阅读：${date(records[0]?.last_read_at)} · ${records.filter((p) => p.is_completed).length} 章已完成</p><div class="table-wrap"><table><thead><tr><th>作品 / 分卷 / 章节</th><th>进度</th><th>有效时长</th></tr></thead><tbody>${records.map((p) => `<tr><td>${e(p.chapters?.volumes?.works?.title)} / ${e(chapterLabel(p.chapters || {}))}</td><td>${Math.round(p.progress_percent)}% ${p.is_completed ? "已完成" : ""}</td><td>${duration(times.filter((t) => t.chapter_id === p.chapter_id).reduce((s, t) => s + Number(t.active_seconds || 0), 0))}</td></tr>`).join("")}</tbody></table></div></details>`;
         })
         .join("") || '<p class="empty">暂时还没有受邀读者。</p>'
     }<h3 class="ruled">读者分享的笔记</h3>${notes.map((n) => `<div class="note-record"><p class="muted">${e(n.profiles?.display_name)} · ${e(n.sections?.title)}</p><p>${e(n.content)}</p></div>`).join("") || '<p class="empty">暂无读者主动分享的笔记。</p>'}</article>`,

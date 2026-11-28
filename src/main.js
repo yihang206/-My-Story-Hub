@@ -273,7 +273,7 @@ async function renderRoute() {
     if (view === "home" || view === "library")
       result = await collection(ctx, view);
     else if (view === "directory" && id) result = await directory(ctx, id);
-    else if (view === "reader" && id) result = await reader(ctx, id);
+    else if (view === "reader" && id) result = await reader(ctx, id, sectionId);
     else if (view === "studio") result = await studio(ctx, id, sectionId);
     else if (view === "history") result = await history(ctx);
     else if (view === "insights") result = await insights(ctx);
