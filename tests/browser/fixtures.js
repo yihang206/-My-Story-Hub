@@ -143,6 +143,27 @@ export async function fixture(
               sort_order: payload.new_order,
             });
         }
+        if (name === "save_story_reading") {
+          let row = tables.reading_progress.find(
+            (r) =>
+              r.user_id === ids.user && r.chapter_id === payload.target_chapter,
+          );
+          if (!row) {
+            row = {
+              user_id: ids.user,
+              chapter_id: payload.target_chapter,
+              paragraph_index: 0,
+              chapters: chapters.find((c) => c.id === payload.target_chapter),
+            };
+            tables.reading_progress.push(row);
+          }
+          Object.assign(row, {
+            section_id: payload.target_section,
+            progress_percent: payload.percent_read,
+            is_completed: row.is_completed || payload.finished,
+            last_read_at: new Date().toISOString(),
+          });
+        }
         return fulfill(null);
       }
       if (url.pathname.includes("/storage/v1/object/")) {

@@ -1,4 +1,71 @@
 @import "./canvas.css";
+.login-options {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  text-align: left;
+}
+.login-options label {
+  margin: 4px 0;
+  font-size: 14px;
+  min-height: 40px;
+  cursor: pointer;
+}
+.login-card .login-options input {
+  margin: 0;
+  width: 18px;
+  height: 18px;
+}
+.login-help {
+  margin: 6px 0 14px;
+  text-align: left;
+}
+#password-message {
+  color: #8b3c39;
+  font-size: 14px;
+}
+#shell .resume-reading {
+  position: absolute;
+  top: 35.2%;
+  left: 55.6%;
+  width: 33.1%;
+  padding: 12px 16px;
+  text-align: left;
+  border: 1px solid var(--art-line);
+  border-radius: 3px;
+  background: rgba(255, 248, 239, 0.87);
+  font-size: max(14px, 0.95cqw);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  line-height: 1.6;
+}
+.resume-label {
+  color: #8a543f;
+  letter-spacing: 0.08em;
+}
+.resume-reading strong {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.resume-detail {
+  color: var(--muted);
+  font-size: 14px;
+}
+@media (max-width: 900px) {
+  #shell .resume-reading {
+    position: static;
+    width: 86%;
+    margin: 0 7% 18px;
+    min-height: 90px;
+    padding: 14px;
+    font-size: 16px;
+  }
+}
 /* Extend only the side gutters using the session's already-decoded private art.
    The original canvas and every element inside it keep their accepted geometry. */
 @media (min-width: 901px) {
@@ -937,5 +1004,7 @@ body[data-mode="reader"][data-theme="dark"] .notice {
   }
 }
 
-#shell[data-view=reader] #reader-preview-banner { top:auto; bottom:82px; }
-
+#shell[data-view="reader"] #reader-preview-banner {
+  top: auto;
+  bottom: 82px;
+}

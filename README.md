@@ -86,3 +86,9 @@ npm run test:browser
 https://yihang206.github.io/-My-Story-Hub/
 
 本仓库 main 分支根目录为 GitHub Pages 发布源。维护时运行 `npm ci`、`npm test`、`npm run prepare:pages`，然后一起提交源码及根目录 index.html / app.js / app.css / .nojekyll。根目录构建文件带版本参数，避免旧模块缓存；私人素材仍在登录后从 Supabase 下载。
+
+## 阅读与登录便利功能
+
+登录后可在首页点击“继续阅读”，恢复到最近可读章节的段落；读完一章后优先继续下一篇正式章节。登录页可分别勾选“记住账号”和“自动登录”，已登录时也能在个人设置中调整。读者在个人设置输入当前密码、新密码和确认密码即可修改初始密码；成功后使用新密码重新登录。
+
+相关实现与验证边界见 [阅读与登录说明](docs/READER-CONVENIENCE.md)。

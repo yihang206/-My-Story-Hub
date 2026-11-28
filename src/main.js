@@ -1,3 +1,4 @@
+import { browserLoginPreferences } from "./core/login-preferences.js";
 import { createClient } from "@supabase/supabase-js";
 import { config } from "./config.js";
 import { AssetManager } from "./core/assets.js";
@@ -20,7 +21,16 @@ import { insights } from "./pages/insights.js";
 import { settings } from "./pages/settings.js";
 import "./styles/app.css";
 
-const db = createClient(config.supabaseUrl, config.publishableKey);
+const loginPreferences = browserLoginPreferences(
+  "sb-wkwwudednbgywllndjtc-auth-token",
+);
+const db = createClient(config.supabaseUrl, config.publishableKey, {
+  auth: {
+    storage: loginPreferences.storage,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 const session = {
   user: null,
   profile: null,
@@ -40,6 +50,8 @@ const ctx = {
   data,
   session,
   draft: null,
+  loginPreferences,
+  logout,
   isAdmin: () => session.profile?.role === "admin" && !session.preview,
   navigate,
   reload: () => navigate(currentRoute, true),
@@ -129,7 +141,8 @@ document.querySelector("#dialog-close").onclick = () =>
 function login(message = "") {
   document.body.dataset.mode = "login";
   document.body.dataset.theme = "paper";
-  root.innerHTML = `<main class="login-screen"><section class="login-card"><div class="ornament" aria-hidden="true">✧</div><p class="eyebrow">PRIVATE LIBRARY · SINCE 2026</p><h1>Story Hub</h1><p>私人创作与阅读空间</p><div class="gold-divider"></div><p class="login-quote">让故事，以另一种方式延续。</p><form id="login-form"><label for="email">邮箱</label><input id="email" type="email" autocomplete="username" required placeholder="请输入受邀邮箱"><label for="password">密码</label><input id="password" type="password" autocomplete="current-password" required placeholder="请输入密码"><button class="primary" type="submit">打开藏书馆</button><p id="login-message" role="status" aria-live="polite">${e(message)}</p></form><p class="muted">仅向受邀好友开放 · 不提供公开注册</p></section></main>`;
+  const pref = loginPreferences.get();
+  root.innerHTML = `<main class="login-screen"><section class="login-card"><div class="ornament" aria-hidden="true">✧</div><p class="eyebrow">PRIVATE LIBRARY · SINCE 2026</p><h1>Story Hub</h1><p>私人创作与阅读空间</p><div class="gold-divider"></div><p class="login-quote">让故事，以另一种方式延续。</p><form id="login-form"><label for="email">邮箱</label><input id="email" value="${e(pref.email)}" type="email" autocomplete="username" required placeholder="请输入受邀邮箱"><label for="password">密码</label><input id="password" type="password" autocomplete="current-password" required placeholder="请输入密码"><div class="login-options"><label class="check-label"><input id="remember-account" type="checkbox" ${pref.rememberAccount ? "checked" : ""}>记住账号</label><label class="check-label"><input id="auto-login" type="checkbox" ${pref.autoLogin ? "checked" : ""}>自动登录</label></div><p class="muted login-help">自动登录适合自己的设备；不会保存你的密码。</p><button class="primary" type="submit">打开藏书馆</button><p id="login-message" role="status" aria-live="polite">${e(message)}</p></form><p class="muted">仅向受邀好友开放 · 不提供公开注册</p></section></main>`;
   root.querySelector("#login-form").onsubmit = async (event) => {
     event.preventDefault();
     const button = event.target.querySelector("button");
@@ -137,6 +150,11 @@ function login(message = "") {
     button.disabled = true;
     status.textContent = "正在验证账号……";
     try {
+      loginPreferences.save({
+        rememberAccount: root.querySelector("#remember-account").checked,
+        autoLogin: root.querySelector("#auto-login").checked,
+        email: root.querySelector("#email").value,
+      });
       const { user } = check(
         await db.auth.signInWithPassword({
           email: root.querySelector("#email").value.trim(),
@@ -207,17 +225,17 @@ async function clearSession() {
     document.documentElement.style.removeProperty(key);
   if (dispose) await dispose();
 }
-async function logout() {
+async function logout(message = "") {
   await ctx.flushDraft();
   if (cleanup) {
     const dispose = cleanup;
     cleanup = null;
     await dispose();
   }
-  check(await db.auth.signOut());
+  check(await db.auth.signOut({ scope: "local" }));
   await clearSession();
   historyReplace("home");
-  login();
+  login(message);
 }
 function historyReplace(route) {
   window.history.replaceState(null, "", `#/${route}`);
@@ -381,13 +399,12 @@ db.auth.onAuthStateChange((event) => {
         void clearSession().then(() => login());
     }, 0);
   }
-  if (event === "TOKEN_REFRESHED" && !initializing && session.user)
-    void renderRoute();
 });
-login();
+root.innerHTML = '<main class="boot" role="status">正在恢复登录……</main>';
 try {
   const auth = check(await db.auth.getSession());
   if (auth.session?.user) await initialize(auth.session.user);
+  else login();
 } catch (error) {
   login(`无法恢复会话：${error.message}`);
 }

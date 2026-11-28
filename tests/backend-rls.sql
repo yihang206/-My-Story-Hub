@@ -58,6 +58,8 @@ do $$ begin
   perform public.save_story_reading('a4000000-0000-4000-8000-000000000001','a5000000-0000-4000-8000-000000000001',100,true,3);
   if (select active_seconds from public.reading_stats where chapter_id='a4000000-0000-4000-8000-000000000001') <> 10 then raise exception 'FAIL: reading seconds'; end if;
   if not (select is_completed from public.reading_progress where chapter_id='a4000000-0000-4000-8000-000000000001') then raise exception 'FAIL: reading completion'; end if;
+  update public.reading_progress set paragraph_index=19 where user_id=auth.uid() and chapter_id='a4000000-0000-4000-8000-000000000001';
+  if (select paragraph_index from public.reading_progress where user_id=auth.uid() and chapter_id='a4000000-0000-4000-8000-000000000001') <> 19 then raise exception 'FAIL: own paragraph checkpoint'; end if;
   insert into public.reader_notes(user_id,section_id,content,share_with_author) values
   (auth.uid(),'a5000000-0000-4000-8000-000000000001','RLS private note',false),
   (auth.uid(),'a5000000-0000-4000-8000-000000000001','RLS shared note',true);

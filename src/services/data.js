@@ -86,7 +86,9 @@ export function createData(db, session) {
       if (session.preview) return [];
       let q = db
         .from("reading_progress")
-        .select("*,chapters(title,volumes(title,work_id,works(title)))")
+        .select(
+          "*,chapters(id,title,status,volumes(title,work_id,works(title)))",
+        )
         .eq("user_id", session.user.id);
       if (chapterId) q = q.eq("chapter_id", chapterId);
       return check(await q.order("last_read_at", { ascending: false }));
@@ -99,6 +101,24 @@ export function createData(db, session) {
           .eq("user_id", session.user.id)
           .maybeSingle(),
       );
+    },
+    async savePosition(chapterId, position) {
+      if (session.preview) return;
+      const saved = check(
+        await db
+          .from("reading_progress")
+          .update({
+            section_id: position.sectionId,
+            paragraph_index: position.paragraphIndex,
+            progress_percent: position.percent,
+            last_read_at: new Date().toISOString(),
+          })
+          .eq("user_id", session.user.id)
+          .eq("chapter_id", chapterId)
+          .select("chapter_id")
+          .maybeSingle(),
+      );
+      if (!saved) throw Error("段落位置未保存，请重试");
     },
     async savePreferences(p) {
       if (session.preview) throw Error("读者预览不会保存设置");
